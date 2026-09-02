@@ -1,5 +1,5 @@
-add_library(vector OBJECT vector.c)
-target_compile_features(vector PUBLIC c_std_17)
+add_library(queue OBJECT queue.c)
+target_compile_features(queue PUBLIC c_std_17)
 
-add_executable(test_vector test_vector.c $<TARGET_OBJECTS:vector>)
-target_compile_features(test_vector PUBLIC c_std_17)
+add_executable(test_queue test_queue.c $<TARGET_OBJECTS:queue>)
+target_compile_features(test_queue PUBLIC c_std_17)
