@@ -1,5 +1,4 @@
 #include "queue.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,8 +9,33 @@ void sum_ints_in_queue(void* queue_item, void* accumulator_arg) {
     *arg_as_int += *item_as_int;
 }
 
+// A queue function to test delete on empty queues
+void empty_queue(queue* queue) {
+    int an_item = 5;
+    void* a_void = &an_item;
+
+    int length = queue_length(queue);
+    int delete_status = queue_delete(queue, &an_item);
+    int dequeue_status = queue_dequeue(queue, &a_void);
+
+    if (length != 0) {
+        printf("queue returned the wrong length: %d\n", length);
+    }
+
+    if (delete_status != -1) {
+        printf("queue deleted wrong item\n");
+    }
+
+    if (dequeue_status != -1) {
+        printf("queue dequeued wrong item\n");
+    }
+}
+
 int main() {
     queue* my_queue = queue_new();
+
+    empty_queue(my_queue);
+
     int a = 1;
     int b = 2;
     int c = 3;
@@ -42,3 +66,5 @@ int main() {
     // Free the queue
     queue_free(my_queue);
 }
+
+

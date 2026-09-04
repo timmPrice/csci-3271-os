@@ -50,26 +50,96 @@ int queue_enqueue(queue* queue, void* data) {
         queue -> tail = newItem;
     }
 
-    queue -> size = queue -> size++;
+    queue -> size++;
     return 0;
 }
 
-int queue_dequeue(queue* queue, void** item) {
-    return -1;
+int queue_dequeue(queue* queue, void** data) {
+    if (queue -> head == NULL || queue -> size == 0) {
+        return -1;
+    } 
+
+    *data = queue -> head -> item;
+    item* aHead = queue -> head;
+
+    queue -> head = queue -> head -> next; 
+
+    if (queue -> head == NULL) {
+        queue -> tail = NULL;  
+    }
+
+    free(aHead);
+    queue -> size--;
+
+    return 0;
 }
 
 int queue_iterate(queue* queue, queue_func f, void* arg) {
-    return -1;
+    if (queue == NULL || f == NULL){
+        return -1;
+    }
+   
+    item* current = queue -> head;
+    while (current != NULL ) {
+        f(current -> item, arg);
+        current = current -> next;
+    }
+
+    return 0;
 }
 
 int queue_free(queue* queue) {
-    return -1;
+    if (queue -> tail != NULL || queue -> size != 0) {
+        return -1;
+    }
+    free (queue);
+    return 0;
 }
 
 int queue_length(const queue* queue) {
-    return -1;
+    if (queue == NULL) {
+        return -1;
+    }
+
+    return queue -> size;
 }
 
-int queue_delete(queue* queue, void* item) {
+int queue_delete(queue* queue, void* the_item) {
+    if (queue == NULL) {
+        return -1;
+    }
+   
+    item* current = queue -> head;
+    item* prev;
+
+    while (current != NULL) {
+        if (current -> item == the_item) {
+           if (current == queue -> head) {
+                queue -> head = queue -> head -> next; 
+                free(current);
+
+                if (queue -> head == NULL) {
+                    queue -> tail = NULL;
+                }
+    
+                queue -> size--;
+                return 0;
+           } else {
+                prev -> next = current -> next;
+
+                if (current == queue -> tail) {
+                    queue -> tail = prev;     
+                }
+
+                free(current);
+                queue -> size--;
+                return 0;
+           }
+        }
+
+        prev = current;
+        current = current -> next;
+    }
     return -1;
+
 }

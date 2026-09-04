@@ -1,0 +1,4 @@
+/home/timprice/repos/csci-3271-os/programming-assignment-1/CMakeFiles/queue.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-1/CMakeFiles/test_queue.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-1/CMakeFiles/edit_cache.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-1/CMakeFiles/rebuild_cache.dir
