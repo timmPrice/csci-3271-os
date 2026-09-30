@@ -58,18 +58,38 @@ B: Completion Time = 27. Waiting Time = 6
 
 Shortest Remaining Time First 
 ```
-4 units compute - B; Waiting - A;
-10 units of compute - A; B does I/O request;
+0   4 units compute - B; Waiting - A;
+4   4 units compute - A; I/O request - B;
+8   5 units compute - B; Waiting - A;
+13  6 units compute - A; I/O request - B; Waiting - B; 
+19  3 units compute - B; Waiting - A;
+22  I/O request A; 
+24  10 units compute - A;  
+
+A: Completion Time = 32. Waiting Time = 7
+B: Completion Time = 27. Waiting Time = 6
 ```
 
+## Page Scheduling
 
+4. 
+How large (in bytes) is a page in the system?
+`12 bits` -> 32 (bits total) - 9 - 11 = 12 -> `2^12 = 4096`
 
+How large (in bytes) is a page table entry? 
+`2^11` page-table entries, each entry occupies 2 bytes -> `4096 / 2024 = 2 byes` 
 
+How many pages are there in the virtual address space;
+`2^20` -> `9 + 11 = 20` bits used for page number
 
+## Page Replacement Algorithms
 
+[!alert] - hand does not move if no page-fault
 
+Request 1 - fault; kicks 4
+Request 0 - fault; kicks 5 (everything has R = 1); (every R set to 0)
+Request 3 - success; R_3 = 1; continue
+Request 0 - success; R_0 = 1; continue
+Request 4 - fault; R_0 = 1; continue
 
-
-
-
-
+3 page faults total
