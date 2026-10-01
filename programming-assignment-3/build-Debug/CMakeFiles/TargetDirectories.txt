@@ -1,0 +1,9 @@
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/CMakeFiles/edit_cache.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/CMakeFiles/rebuild_cache.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/src/CMakeFiles/pager.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/src/CMakeFiles/paging_simulation.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/src/CMakeFiles/edit_cache.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/src/CMakeFiles/rebuild_cache.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/src/util/CMakeFiles/util.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/src/util/CMakeFiles/edit_cache.dir
+/home/timprice/repos/csci-3271-os/programming-assignment-3/build-Debug/src/util/CMakeFiles/rebuild_cache.dir
