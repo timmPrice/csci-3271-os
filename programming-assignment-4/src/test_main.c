@@ -99,5 +99,35 @@ int main() {
         printf("Write-read test on testfile2 failed!.n");
         return -1;
     }
+
+    status = vsfs_link("/home/myuser/documents/testfile1", "/home/myuser/link1");
+    if (status != 0) {
+        printf("Link failed\n");
+        return -1;
+    }
+    printf("Link succeeded.\n");
+
+    status = vsfs_unlink("/home/myuser/documents/testfile1");
+    int linkfd = vsfs_open_file("/home/myuser/link1", FILE_MODE_READ);
+    if (status != 0 || linkfd < 0) {
+        printf("Unlink of original failed or link stopped working\n");
+        return -1;
+    }
+    vsfs_close_file(linkfd);
+    printf("Unlink of original succeeded, link still opens.\n");
+
+    status = vsfs_unlink("/home/myuser/link1");
+    if (status != 0 || vsfs_open_file("/home/myuser/link1", FILE_MODE_READ) >= 0) {
+        printf("Unlink of last link failed\n");
+        return -1;
+    }
+    printf("Unlink of last link succeeded, file deleted.\n");
+
+    if (vsfs_link("/home/myuser", "/home/dirlink") == 0) {
+        printf("Linking a directory should have failed\n");
+        return -1;
+    }
+    printf("Linking a directory correctly failed.\n");
+
     return 0;
 }

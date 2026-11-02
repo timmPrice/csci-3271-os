@@ -189,14 +189,265 @@ int vsfs_load(disk_interface* disk) {
 }
 
 int vsfs_link(const char* source_path, const char* dest_path) {
+    
+    if (the_disk == NULL || source_path == NULL || dest_path == NULL) {
+        return -1; 
+    }
 
-    return -1;
+    inum srcInode = vsfs_traverse_to_inode(source_path);
+    if (srcInode == INVALID_INODE) {
+        return -1;
+    }
+
+    blocknum srcBlock = superblock_snapshot.super.first_inode_block_num + (srcInode / INODES_PER_BLOCK);
+    
+    metadata_block srcInodeBlock;
+
+    if (the_disk->read_block(the_disk, srcBlock, (disk_block*)&srcInodeBlock) != 0) {
+        return -1 ;
+    }
+
+    inum inodePosition = srcInode % INODES_PER_BLOCK;
+    inode* anInode = &srcInodeBlock.inode_table.inodes[inodePosition];
+
+    if (anInode->type != FILE_TYPE_REGULAR) {
+        return -1; 
+    }
+    
+    if (vsfs_traverse_to_inode(dest_path) != INVALID_INODE){
+        // directory already linked or exist?
+        return -1; 
+    }
+
+    char* buffer = checked_malloc(strlen(dest_path) + 1);
+    if (path_parent(dest_path, buffer) != 0){
+        free(buffer);
+        return -1;
+    }
+
+    inum bufferInode = vsfs_traverse_to_inode(buffer);
+    if (bufferInode == INVALID_INODE){
+        free(buffer);
+        return -1;
+    }
+    
+    free(buffer);
+    blocknum parentBlock = superblock_snapshot.super.first_inode_block_num + (bufferInode / INODES_PER_BLOCK);
+
+    metadata_block parentInodeBlock;
+
+    if (the_disk->read_block(the_disk, parentBlock, (disk_block*)&parentInodeBlock) != 0) {
+        return -1;
+    }
+
+    inum parentPosition = bufferInode % INODES_PER_BLOCK;
+    inode* anotherInode = &parentInodeBlock.inode_table.inodes[parentPosition];
+
+    if (anotherInode ->type != FILE_TYPE_DIRECTORY) {
+        return -1;
+    }
+
+    blocknum aBlocknum = superblock_snapshot.super.first_data_block_num + anotherInode->direct_blocks[0];
+    metadata_block directoryBlock;
+
+    if (the_disk->read_block(the_disk, aBlocknum, (disk_block*)&directoryBlock) != 0) {
+        return -1;
+    }
+
+    int freeSlot = -1;
+    for (size_t i = 0; i < DIRECTORY_ENTRIES_PER_BLOCK; i++) {
+        if (directoryBlock.directory.entries[i].inode_num == INVALID_INODE) {
+            freeSlot = i;
+            break;
+        }
+    }
+
+    if (freeSlot == -1) {
+        return -1;
+    }
+
+    char* name = checked_malloc(strlen(dest_path) + 1);
+    int basename = path_basename(dest_path, name);
+
+    if(basename != 0){
+        free(name);
+        return -1;
+    }
+
+    if (strlen(name) >= MAX_FILE_NAME_LENGTH) {
+        free(name);
+        return -1;
+    }
+
+    strcpy(directoryBlock.directory.entries[freeSlot].name, name);
+    directoryBlock.directory.entries[freeSlot].inode_num = srcInode;
+
+    anInode->link_count++;
+    free(name);
+
+    if (the_disk->write_block(the_disk, aBlocknum, (disk_block*)&directoryBlock) != 0) {
+        return -1;
+    }
+
+    if (the_disk->write_block(the_disk, srcBlock, (disk_block*)&srcInodeBlock) != 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 int vsfs_unlink(const char* path) {
 
-    return -1;
+    if (the_disk == NULL || path == NULL) {
+        return -1; 
+    }
+
+    inum srcInode = vsfs_traverse_to_inode(path);
+    if (srcInode == INVALID_INODE) {
+        return -1;
+    }
+
+    blocknum srcBlock = superblock_snapshot.super.first_inode_block_num + (srcInode / INODES_PER_BLOCK);
+    
+    metadata_block srcInodeBlock;
+
+    if (the_disk->read_block(the_disk, srcBlock, (disk_block*)&srcInodeBlock) != 0) {
+        return -1 ;
+    }
+
+    inum inodePosition = srcInode % INODES_PER_BLOCK;
+    inode* anInode = &srcInodeBlock.inode_table.inodes[inodePosition];
+
+    if (anInode->type != FILE_TYPE_REGULAR) {
+        return -1; 
+    }
+
+    char* buffer = checked_malloc(strlen(path) + 1);
+    if (path_parent(path, buffer) != 0){
+        free(buffer);
+        return -1;
+    }
+
+    inum bufferInode = vsfs_traverse_to_inode(buffer);
+    if (bufferInode == INVALID_INODE){
+        free(buffer);
+        return -1;
+    }
+    
+    free(buffer);
+    blocknum parentBlock = superblock_snapshot.super.first_inode_block_num + (bufferInode / INODES_PER_BLOCK);
+
+    metadata_block parentInodeBlock;
+
+    if (the_disk->read_block(the_disk, parentBlock, (disk_block*)&parentInodeBlock) != 0) {
+        return -1;
+    }
+
+    inum parentPosition = bufferInode % INODES_PER_BLOCK;
+    inode* anotherInode = &parentInodeBlock.inode_table.inodes[parentPosition];
+
+    if (anotherInode ->type != FILE_TYPE_DIRECTORY) {
+        return -1;
+    }
+
+    blocknum aBlocknum = superblock_snapshot.super.first_data_block_num + anotherInode->direct_blocks[0];
+    metadata_block directoryBlock;
+
+    if (the_disk->read_block(the_disk, aBlocknum, (disk_block*)&directoryBlock) != 0) {
+        return -1;
+    }
+
+    char* name = checked_malloc(strlen(path) + 1);
+    int basename = path_basename(path, name);
+
+    if(basename != 0){
+        free(name);
+        return -1;
+    }
+
+    int entrySlot = -1;
+    for (size_t i = 0; i < DIRECTORY_ENTRIES_PER_BLOCK; i++) {
+        if (directoryBlock.directory.entries[i].inode_num != INVALID_INODE &&
+            strcmp(directoryBlock.directory.entries[i].name, name) == 0) {
+            entrySlot = i;
+            break;
+        }
+    }
+    free(name);
+
+    if (entrySlot == -1) {
+        return -1;
+    }
+
+    directoryBlock.directory.entries[entrySlot].inode_num = INVALID_INODE;
+    memset(directoryBlock.directory.entries[entrySlot].name, '\0', MAX_FILE_NAME_LENGTH);
+
+    if (the_disk->write_block(the_disk, aBlocknum, (disk_block*)&directoryBlock) != 0) {
+        return -1;
+    }
+
+    anInode->link_count--;
+
+    if (anInode->link_count > 0) {
+        if (the_disk->write_block(the_disk, srcBlock, (disk_block*)&srcInodeBlock) != 0) {
+            return -1;
+        }
+        return 0;
+    }
+
+    disk_block dataBitmap;
+    if (the_disk->read_block(the_disk, superblock_snapshot.super.data_bitmap_block_num, &dataBitmap) != 0) {
+        return -1;
+    }
+
+    for (int i = 0; i < NUM_DIRECT_BLOCKS; i++) {
+        if (anInode->direct_blocks[i] != INVALID_DATA_BLOCK) {
+            bitmap_block_clear(&dataBitmap, anInode->direct_blocks[i]);
+            anInode->direct_blocks[i] = INVALID_DATA_BLOCK;
+        }
+    }
+
+    if (anInode->indirect_block != INVALID_DATA_BLOCK) {
+        metadata_block indirectBlock;
+        if (the_disk->read_block(the_disk, superblock_snapshot.super.first_data_block_num + anInode->indirect_block, (disk_block*)&indirectBlock) != 0) {
+            return -1;
+        }
+
+        for (size_t i = 0; i < REFS_PER_BLOCK; i++) {
+            if (indirectBlock.indirect.block_numbers[i] != INVALID_DATA_BLOCK) {
+                bitmap_block_clear(&dataBitmap, indirectBlock.indirect.block_numbers[i]);
+            }
+        }
+
+        bitmap_block_clear(&dataBitmap, anInode->indirect_block);
+        anInode->indirect_block = INVALID_DATA_BLOCK;
+    }
+
+    if (the_disk->write_block(the_disk, superblock_snapshot.super.data_bitmap_block_num, &dataBitmap) != 0) {
+        return -1;
+    }
+
+    disk_block inodeBitmap;
+    if (the_disk->read_block(the_disk, superblock_snapshot.super.inode_bitmap_block_num, &inodeBitmap) != 0) {
+        return -1;
+    }
+
+    bitmap_block_clear(&inodeBitmap, srcInode);
+
+    if (the_disk->write_block(the_disk, superblock_snapshot.super.inode_bitmap_block_num, &inodeBitmap) != 0) {
+        return -1;
+    }
+
+    anInode->type = FILE_TYPE_FREE;
+    anInode->size = 0;
+
+    if (the_disk->write_block(the_disk, srcBlock, (disk_block*)&srcInodeBlock) != 0) {
+        return -1;
+    }
+
+    return 0;
 }
+
 
 int vsfs_create(const char* path, file_mode mode) {
     if (the_disk == NULL) {
@@ -230,7 +481,7 @@ int vsfs_mkdir(const char* path) {
  * @param type A file_type indicating whether to create a file or directory
  * @param mode The mode to open the new file in, if type is FILE_TYPE_REGULAR
  * @return The file descriptor of the open file, or 0 to indicate success at
- * creating a directory, or -1 if there was an error.
+ * creating a directory, or -1 if there was an error.fs/c
  */
 int vsfs_create_file(const char* path, file_type type, file_mode mode) {
     // Ensure there is a free inode for the new file
